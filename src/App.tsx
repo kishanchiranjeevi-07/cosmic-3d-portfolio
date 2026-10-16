@@ -368,21 +368,36 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
   ]
 };
 
-const PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v3';
-const PREVIOUS_PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v2';
+const PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v4';
+const PREVIOUS_PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v3';
 
 function loadPortfolioData(): PortfolioData {
   try {
     const current = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
     if (current) return JSON.parse(current) as PortfolioData;
 
-    const previous = localStorage.getItem(PREVIOUS_PORTFOLIO_STORAGE_KEY);
+    const previous =
+      localStorage.getItem(PREVIOUS_PORTFOLIO_STORAGE_KEY) ??
+      localStorage.getItem('cosmic_portfolio_v2');
     if (!previous) return INITIAL_PORTFOLIO_DATA;
 
     const saved = JSON.parse(previous) as Partial<PortfolioData>;
     if (!Array.isArray(saved.projects)) return INITIAL_PORTFOLIO_DATA;
 
     const projectIds = new Set(saved.projects.map((project) => project.id));
+    const migratedProjects = saved.projects.map((project) => {
+      const defaults = INITIAL_PORTFOLIO_DATA.projects.find(
+        (defaultProject) => defaultProject.id === project.id
+      );
+      if (!defaults) return project;
+
+      return {
+        ...defaults,
+        ...project,
+        githubUrl: project.githubUrl || defaults.githubUrl,
+        demoUrl: project.demoUrl || defaults.demoUrl
+      };
+    });
     const timeline = Array.isArray(saved.timeline) ? saved.timeline : [];
     const timelineIds = new Set(timeline.map((item) => item.id));
 
@@ -393,7 +408,7 @@ function loadPortfolioData(): PortfolioData {
       socials: { ...INITIAL_PORTFOLIO_DATA.socials, ...saved.socials },
       skills: Array.isArray(saved.skills) ? saved.skills : INITIAL_PORTFOLIO_DATA.skills,
       projects: [
-        ...saved.projects,
+        ...migratedProjects,
         ...INITIAL_PORTFOLIO_DATA.projects.filter(
           (project) =>
             ['proj-4', 'proj-5'].includes(project.id) && !projectIds.has(project.id)
@@ -3188,6 +3203,7 @@ Would love your feedback on the 3D transitions and UI experience!
                   setData(INITIAL_PORTFOLIO_DATA);
                   localStorage.removeItem(PORTFOLIO_STORAGE_KEY);
                   localStorage.removeItem(PREVIOUS_PORTFOLIO_STORAGE_KEY);
+                  localStorage.removeItem('cosmic_portfolio_v2');
                   localStorage.removeItem('cosmic_portfolio_v1');
                 }}
                 className="text-xs font-mono text-rose-400 hover:underline"
