@@ -127,7 +127,7 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
     goals:
       'To create useful digital products with clear interfaces, careful engineering, and memorable interactive details.',
     stats: [
-      { label: 'Featured Projects', value: '3+' },
+      { label: 'Featured Projects', value: '5+' },
       { label: 'Core Stack', value: 'React + TS' },
       { label: 'Creative Layer', value: 'Three.js' },
       { label: 'Workflow', value: 'Build • Iterate' }
@@ -276,6 +276,36 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
       previewType: 'analytics-cube',
       accentColor: '#34d399',
       metrics: 'React • TypeScript • Vite'
+    },
+    {
+      id: 'proj-4',
+      title: 'Finlytics Flow — Ledger Expense Tracker',
+      tagline: 'A personal finance workspace with account-based cloud data',
+      description:
+        'A polished expense tracker with individual accounts, cloud-saved transactions, budgets, and goals. Its reports show income, expenses, balance, savings rate, and spending by category, with PDF and CSV export.',
+      architecture:
+        'Account-based sign-in with email/password or Google and user-scoped cloud data. The published app opens at its sign-in screen; each account keeps its own financial records.',
+      technologies: ['Lovable', 'Cloud accounts', 'Finance dashboard', 'PDF / CSV export'],
+      githubUrl: '',
+      demoUrl: 'https://cozy-cash-flow-42.lovable.app/',
+      previewType: 'analytics-cube',
+      accentColor: '#34d399',
+      metrics: 'Published • Sign-in required'
+    },
+    {
+      id: 'proj-5',
+      title: 'VELTOR X — 3D Supercar Showroom',
+      tagline: 'An interactive showroom for fictional concept cars',
+      description:
+        'An immersive car concept gallery with eight fictional vehicles, 3D viewing controls, and live paint, wheel, environment, and lighting customization. Its matching flow helps visitors explore a car concept for their driving preferences.',
+      architecture:
+        'Interactive vehicle showroom and configurator with a guided “Find Your Match” flow. Vehicle imagery is AI-generated, and all specifications and prices are illustrative concept data.',
+      technologies: ['Interactive 3D showroom', 'Live car customizer', 'AI-generated concept imagery'],
+      githubUrl: '',
+      demoUrl: '',
+      previewType: 'supercar-Aero',
+      accentColor: '#f97316',
+      metrics: 'Concept experience • Not published'
     }
   ],
   timeline: [
@@ -306,9 +336,80 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
         'Designed responsive dashboard views for projects, tasks, and progress',
         'Marked sample metrics clearly while backend persistence remains future work'
       ]
+    },
+    {
+      id: 'tl-3',
+      year: 'FEATURED PROJECT',
+      title: 'Finlytics Flow — Ledger Expense Tracker',
+      organization: 'Independent Project',
+      category: 'Project',
+      description:
+        'A personal finance workspace with individual sign-in, cloud-saved records, and a detailed reports page.',
+      highlights: [
+        'Added account-based access with email/password and Google sign-in',
+        'Built reports for spending categories, balance, and savings rate',
+        'Added PDF and CSV downloads for the report'
+      ]
+    },
+    {
+      id: 'tl-4',
+      year: 'FEATURED PROJECT',
+      title: 'VELTOR X — 3D Supercar Showroom',
+      organization: 'Independent Project',
+      category: 'Project',
+      description:
+        'An interactive digital showroom for AI-imagined concept vehicles and live customization.',
+      highlights: [
+        'Created a gallery of eight fictional concept cars with 3D viewing controls',
+        'Added paint, wheel, environment, and lighting customization',
+        'Clearly labels vehicle images, specifications, and prices as illustrative concepts'
+      ]
     }
   ]
 };
+
+const PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v3';
+const PREVIOUS_PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v2';
+
+function loadPortfolioData(): PortfolioData {
+  try {
+    const current = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
+    if (current) return JSON.parse(current) as PortfolioData;
+
+    const previous = localStorage.getItem(PREVIOUS_PORTFOLIO_STORAGE_KEY);
+    if (!previous) return INITIAL_PORTFOLIO_DATA;
+
+    const saved = JSON.parse(previous) as Partial<PortfolioData>;
+    if (!Array.isArray(saved.projects)) return INITIAL_PORTFOLIO_DATA;
+
+    const projectIds = new Set(saved.projects.map((project) => project.id));
+    const timeline = Array.isArray(saved.timeline) ? saved.timeline : [];
+    const timelineIds = new Set(timeline.map((item) => item.id));
+
+    return {
+      ...INITIAL_PORTFOLIO_DATA,
+      ...saved,
+      profile: { ...INITIAL_PORTFOLIO_DATA.profile, ...saved.profile },
+      socials: { ...INITIAL_PORTFOLIO_DATA.socials, ...saved.socials },
+      skills: Array.isArray(saved.skills) ? saved.skills : INITIAL_PORTFOLIO_DATA.skills,
+      projects: [
+        ...saved.projects,
+        ...INITIAL_PORTFOLIO_DATA.projects.filter(
+          (project) =>
+            ['proj-4', 'proj-5'].includes(project.id) && !projectIds.has(project.id)
+        )
+      ],
+      timeline: [
+        ...timeline,
+        ...INITIAL_PORTFOLIO_DATA.timeline.filter(
+          (item) => ['tl-3', 'tl-4'].includes(item.id) && !timelineIds.has(item.id)
+        )
+      ]
+    };
+  } catch {
+    return INITIAL_PORTFOLIO_DATA;
+  }
+}
 
 // ============================================================================
 // 2. PROCEDURAL PLANET & NEBULA TEXTURE GENERATORS (ZERO EXTERNAL URL FAILURES)
@@ -546,17 +647,12 @@ const ProjectMini3DCanvas: React.FC<{
 export function App() {
   // Portfolio Data State (persisted in localStorage so user edits stay live)
   const [data, setData] = useState<PortfolioData>(() => {
-    try {
-      const saved = localStorage.getItem('cosmic_portfolio_v2');
-      return saved ? JSON.parse(saved) : INITIAL_PORTFOLIO_DATA;
-    } catch {
-      return INITIAL_PORTFOLIO_DATA;
-    }
+    return loadPortfolioData();
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem('cosmic_portfolio_v2', JSON.stringify(data));
+      localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(data));
     } catch {
       // Ignore storage quota errors
     }
@@ -1885,14 +1981,16 @@ Would love your feedback on the 3D transitions and UI experience!
                   {/* Card Footer Buttons */}
                   <div className="px-6 pb-6 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                      <a
-                        href={project.githubUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3.5 py-2 rounded-lg text-xs font-mono bg-white/5 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1.5 transition"
-                      >
-                        <Github className="w-3.5 h-3.5" /> GitHub Repo
-                      </a>
+                      {project.githubUrl && (
+                        <a
+                          href={project.githubUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3.5 py-2 rounded-lg text-xs font-mono bg-white/5 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1.5 transition"
+                        >
+                          <Github className="w-3.5 h-3.5" /> GitHub Repo
+                        </a>
+                      )}
                       {project.demoUrl && (
                         <a
                           href={project.demoUrl}
@@ -3088,6 +3186,8 @@ Would love your feedback on the 3D transitions and UI experience!
               <button
                 onClick={() => {
                   setData(INITIAL_PORTFOLIO_DATA);
+                  localStorage.removeItem(PORTFOLIO_STORAGE_KEY);
+                  localStorage.removeItem(PREVIOUS_PORTFOLIO_STORAGE_KEY);
                   localStorage.removeItem('cosmic_portfolio_v1');
                 }}
                 className="text-xs font-mono text-rose-400 hover:underline"
