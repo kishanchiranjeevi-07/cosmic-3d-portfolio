@@ -257,7 +257,7 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
         'Next.js and TypeScript app with PDF/DOCX parsing, validated structured feedback, optional server-side OpenAI analysis, and browser-local history.',
       technologies: ['Next.js', 'React', 'TypeScript', 'PDF / DOCX', 'Zod'],
       githubUrl: 'https://github.com/kishanchiranjeevi-07/resumeiq-analyzer',
-      demoUrl: '',
+      demoUrl: 'https://resumeiq-analyzer-cduoa0ufz-kishan-5669.vercel.app/',
       previewType: 'ai-neural',
       accentColor: '#a855f7',
       metrics: 'PDF + DOCX • Demo mode available'
@@ -272,7 +272,7 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
         'React, TypeScript, and Vite frontend with responsive navigation, project summaries, weekly progress, task views, and language breakdowns.',
       technologies: ['React', 'TypeScript', 'Vite', 'Dashboard UI'],
       githubUrl: 'https://github.com/kishanchiranjeevi-07/easy-workflow',
-      demoUrl: '',
+      demoUrl: 'https://easy-workflow-g7jx5er7c-kishan-5669.vercel.app/',
       previewType: 'analytics-cube',
       accentColor: '#34d399',
       metrics: 'React • TypeScript • Vite'
