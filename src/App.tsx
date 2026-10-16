@@ -395,6 +395,8 @@ function createProceduralPlanetTextures() {
 // 3. MINI INTERACTIVE 3D PREVIEW CANVAS FOR PROJECT CARDS
 // ============================================================================
 
+const TARGET_FRAME_INTERVAL = 1000 / 120;
+
 const ProjectMini3DCanvas: React.FC<{
   type: ProjectItem['previewType'];
   accentColor: string;
@@ -406,6 +408,7 @@ const ProjectMini3DCanvas: React.FC<{
     if (!container) return;
 
     let frameId = 0;
+    let nextFrameTime = 0;
     const width = container.clientWidth || 320;
     const height = container.clientHeight || 190;
 
@@ -514,13 +517,18 @@ const ProjectMini3DCanvas: React.FC<{
       group.add(halo);
     }
 
-    const animate = () => {
+    const animate = (time: number) => {
       frameId = requestAnimationFrame(animate);
+      if (nextFrameTime && time + 0.5 < nextFrameTime) return;
+      if (!nextFrameTime || time - nextFrameTime > TARGET_FRAME_INTERVAL * 2) {
+        nextFrameTime = time;
+      }
+      nextFrameTime += TARGET_FRAME_INTERVAL;
       group.rotation.y += 0.012;
       group.rotation.x = Math.sin(Date.now() * 0.0015) * 0.2;
       renderer.render(scene, camera);
     };
-    animate();
+    frameId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(frameId);
@@ -710,6 +718,7 @@ export function App() {
     let animationFrameId = 0;
     let currentPixelRatio = 1;
     let lastFrameTime = 0;
+    let nextFrameTime = 0;
     let sampleStartTime = 0;
     let sampleFrames = 0;
     let renderer: THREE.WebGLRenderer;
@@ -1006,6 +1015,9 @@ export function App() {
         cancelAnimationFrame(animationFrameId);
       } else {
         lastFrameTime = 0;
+        nextFrameTime = 0;
+        sampleStartTime = 0;
+        sampleFrames = 0;
         animationFrameId = requestAnimationFrame(animate);
       }
     };
@@ -1020,6 +1032,11 @@ export function App() {
     animate = (time: number) => {
       if (document.hidden) return;
       animationFrameId = requestAnimationFrame(animate);
+      if (nextFrameTime && time + 0.5 < nextFrameTime) return;
+      if (!nextFrameTime || time - nextFrameTime > TARGET_FRAME_INTERVAL * 2) {
+        nextFrameTime = time;
+      }
+      nextFrameTime += TARGET_FRAME_INTERVAL;
       sampleFrames += 1;
 
       const delta = lastFrameTime
@@ -1030,7 +1047,7 @@ export function App() {
       if (!sampleStartTime) sampleStartTime = time;
       if (time - sampleStartTime >= 2000) {
         const measuredFps = (sampleFrames * 1000) / (time - sampleStartTime);
-        setRenderFps(Math.round(measuredFps));
+        setRenderFps(Math.min(Math.round(measuredFps), 120));
         let nextPixelRatio = currentPixelRatio;
         if (measuredFps < 50 && currentPixelRatio > minPixelRatio) {
           nextPixelRatio = Math.max(minPixelRatio, currentPixelRatio * 0.85);
