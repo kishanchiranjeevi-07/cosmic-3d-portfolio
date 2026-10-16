@@ -237,15 +237,15 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
       title: 'Cosmic 3D Portfolio',
       tagline: 'Cinematic WebGL Scrolling Developer Universe',
       description:
-        'An ultra-realistic 3D scrolling developer portfolio powered by procedural planetary shaders, instanced asteroid fields, and a 6-scene scroll-synchronized camera rig with an in-browser CMS customizer.',
+        'A scroll-driven portfolio with a procedural Three.js scene, page-linked camera movement, and an in-browser editor for updating profile content.',
       architecture:
-        'Engineered with a single-pass WebGL renderer, procedural HTML5 Canvas bump/specular texture synthesis, GPU-instanced asteroid belts, and real-time state persistence.',
-      technologies: ['React', 'TypeScript', 'Three.js', 'Tailwind CSS', 'GSAP Scroll'],
+        'React and TypeScript interface with a Three.js scene. Portfolio edits are saved in this browser using localStorage.',
+      technologies: ['React', 'TypeScript', 'Three.js', 'Tailwind CSS', 'WebGL'],
       githubUrl: 'https://github.com/kishanchiranjeevi-07/cosmic-3d-portfolio',
       demoUrl: 'https://kishanchiranjeevi-07.github.io/cosmic-3d-portfolio/',
       previewType: 'planet',
       accentColor: '#22d3ee',
-      metrics: 'Three.js • Editable content customizer'
+      metrics: 'Scroll-linked 3D • Browser editor'
     },
     {
       id: 'proj-2',
@@ -2063,7 +2063,7 @@ Would love your feedback on the 3D transitions and UI experience!
                     Ready for GitHub & LinkedIn Showcase
                   </div>
                   <p className="text-slate-300 leading-relaxed">
-                    Click below to open your step-by-step GitHub upload commands, Vercel deployment config, and LinkedIn launch post.
+                    Open the published GitHub Pages link, repository details, and a draft LinkedIn launch post.
                   </p>
                   <button
                     onClick={() => setIsLaunchKitOpen(true)}
