@@ -21,6 +21,9 @@ import {
   Check,
   X,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Search,
   Eye,
   Zap,
   ShieldCheck,
@@ -103,6 +106,40 @@ export interface PortfolioData {
   projects: ProjectItem[];
   timeline: TimelineItem[];
 }
+
+const CONCEPT_PROJECTS: ProjectItem[] = (() => {
+  const themes = [
+    { name: 'Orbital Habitat', type: 'planet' as const, color: '#22d3ee', tech: ['Three.js', 'Shader Art', 'WebGL'], idea: 'A rotating habitat with luminous rings and modular living zones.' },
+    { name: 'Neural Garden', type: 'ai-neural' as const, color: '#a855f7', tech: ['React Three Fiber', 'Generative Art', 'GLSL'], idea: 'An explorable network of glowing nodes that grows like a living garden.' },
+    { name: 'Data Skyline', type: 'analytics-cube' as const, color: '#34d399', tech: ['Three.js', 'Data Viz', 'TypeScript'], idea: 'A procedural city where building height and light map to live data.' },
+    { name: 'Aero Concept', type: 'supercar-Aero' as const, color: '#f97316', tech: ['Three.js', 'Product Configurator', 'WebGL'], idea: 'A sculptural vehicle study with a selectable paint and lighting palette.' },
+    { name: 'Crystal Cavern', type: 'planet' as const, color: '#38bdf8', tech: ['Three.js', 'Procedural Materials', 'WebGL'], idea: 'A deep crystal landscape with reflective formations and soft volumetric light.' },
+    { name: 'Deep Sea Lab', type: 'ai-neural' as const, color: '#2dd4bf', tech: ['React Three Fiber', 'Environment Design', 'GLSL'], idea: 'A subsea research station surrounded by animated bioluminescent life.' },
+    { name: 'Kinetic Pavilion', type: 'analytics-cube' as const, color: '#f472b6', tech: ['Three.js', 'Interactive Architecture', 'TypeScript'], idea: 'A pavilion made from responsive geometric panels and shifting shadows.' },
+    { name: 'Solar Observatory', type: 'planet' as const, color: '#fbbf24', tech: ['Three.js', 'Space Visualization', 'WebGL'], idea: 'A miniature observatory tracking planets across a glowing orbital map.' },
+    { name: 'Sound Sculpture', type: 'ai-neural' as const, color: '#c084fc', tech: ['Web Audio API', 'Three.js', 'Generative Art'], idea: 'A 3D sculpture that bends and changes color with an audio signal.' },
+    { name: 'Future Market', type: 'analytics-cube' as const, color: '#60a5fa', tech: ['Three.js', 'Commerce UX', 'React'], idea: 'A spatial product gallery with floating objects and interactive detail views.' }
+  ];
+  const variations = ['Aurora', 'Tidal', 'Prism', 'Nova', 'Echo', 'Lunar', 'Pulse', 'Halo', 'Drift', 'Zenith'];
+  return themes.flatMap((theme, themeIndex) =>
+    variations.map((variation, variationIndex) => {
+      const number = themeIndex * variations.length + variationIndex + 1;
+      return {
+        id: `concept-${String(number).padStart(3, '0')}`,
+        title: `${variation} ${theme.name}`,
+        tagline: 'Interactive 3D concept study',
+        description: `${theme.idea} ${variation} explores a distinct visual direction, motion language, and interaction idea. This is a concept card ready to be replaced with a completed project.` ,
+        architecture: 'Concept study only. Replace this description and add a repository or live demo when the project is built.',
+        technologies: theme.tech,
+        githubUrl: '',
+        demoUrl: '',
+        previewType: theme.type,
+        accentColor: theme.color,
+        metrics: 'Concept study • Not yet built'
+      };
+    })
+  );
+})();
 
 export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
   profile: {
@@ -306,7 +343,8 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
       previewType: 'supercar-Aero',
       accentColor: '#f97316',
       metrics: 'Concept experience • Not published'
-    }
+    },
+    ...CONCEPT_PROJECTS
   ],
   timeline: [
     {
@@ -368,8 +406,8 @@ export const INITIAL_PORTFOLIO_DATA: PortfolioData = {
   ]
 };
 
-const PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v4';
-const PREVIOUS_PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v3';
+const PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v5';
+const PREVIOUS_PORTFOLIO_STORAGE_KEY = 'cosmic_portfolio_v4';
 
 function loadPortfolioData(): PortfolioData {
   try {
@@ -378,6 +416,7 @@ function loadPortfolioData(): PortfolioData {
 
     const previous =
       localStorage.getItem(PREVIOUS_PORTFOLIO_STORAGE_KEY) ??
+      localStorage.getItem('cosmic_portfolio_v3') ??
       localStorage.getItem('cosmic_portfolio_v2');
     if (!previous) return INITIAL_PORTFOLIO_DATA;
 
@@ -410,8 +449,7 @@ function loadPortfolioData(): PortfolioData {
       projects: [
         ...migratedProjects,
         ...INITIAL_PORTFOLIO_DATA.projects.filter(
-          (project) =>
-            ['proj-4', 'proj-5'].includes(project.id) && !projectIds.has(project.id)
+          (project) => !projectIds.has(project.id)
         )
       ],
       timeline: [
@@ -683,6 +721,8 @@ export function App() {
 
   // Interactive Filters & Modals
   const [selectedSkillCategory, setSelectedSkillCategory] = useState<string>('All');
+  const [projectSearch, setProjectSearch] = useState('');
+  const [projectPage, setProjectPage] = useState(1);
   const [highlightedSkill, setHighlightedSkill] = useState<SkillItem | null>(null);
   const [activeProjectModal, setActiveProjectModal] = useState<ProjectItem | null>(null);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState<boolean>(false);
@@ -1261,6 +1301,47 @@ export function App() {
     selectedSkillCategory === 'All'
       ? data.skills
       : data.skills.filter((s) => s.category === selectedSkillCategory);
+
+  const projectPageSize = 12;
+  const matchingProjects = data.projects.filter((project) =>
+    `${project.title} ${project.tagline} ${project.description} ${project.technologies.join(' ')}`
+      .toLowerCase()
+      .includes(projectSearch.trim().toLowerCase())
+  );
+  const projectPageCount = Math.max(1, Math.ceil(matchingProjects.length / projectPageSize));
+  const visibleProjects = matchingProjects.slice(
+    (projectPage - 1) * projectPageSize,
+    projectPage * projectPageSize
+  );
+  const conceptCount = data.projects.filter((project) => project.id.startsWith('concept-')).length;
+
+  const projectPager = (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3">
+      <p className="text-xs font-mono text-slate-400">
+        Showing {matchingProjects.length ? (projectPage - 1) * projectPageSize + 1 : 0}–
+        {Math.min(projectPage * projectPageSize, matchingProjects.length)} of {matchingProjects.length} cards
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setProjectPage((page) => Math.max(1, page - 1))}
+          disabled={projectPage <= 1}
+          className="px-3 py-2 rounded-lg border border-white/10 text-xs text-cyan-200 disabled:opacity-35 disabled:cursor-not-allowed hover:bg-white/5 flex items-center gap-1"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" /> Previous
+        </button>
+        <span className="text-xs font-mono text-slate-300">Page {projectPage} / {projectPageCount}</span>
+        <button
+          type="button"
+          onClick={() => setProjectPage((page) => Math.min(projectPageCount, page + 1))}
+          disabled={projectPage >= projectPageCount}
+          className="px-3 py-2 rounded-lg border border-white/10 text-xs text-cyan-200 disabled:opacity-35 disabled:cursor-not-allowed hover:bg-white/5 flex items-center gap-1"
+        >
+          Next <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
 
   // Smooth Section Scroll Helper
   const scrollToSection = (id: string) => {
@@ -1922,11 +2003,14 @@ Would love your feedback on the 3D transitions and UI experience!
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-6">
               <div>
                 <span className="text-xs font-mono uppercase tracking-widest text-cyan-400 block">
-                  // SCENE 04 • HYPERSPACE PORTAL & PROJECT GALAXY
+                  // SCENE 04 • 3D PROJECT GALAXY
                 </span>
                 <h2 className="text-3xl sm:text-5xl font-black tracking-tight mt-1">
-                  FEATURED 3D PROJECT SHOWCASE
+                  3D PROJECT GALLERY
                 </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  {data.projects.length} cards, including {conceptCount} clearly marked concept studies.
+                </p>
               </div>
               <button
                 onClick={() => {
@@ -1939,9 +2023,28 @@ Would love your feedback on the 3D transitions and UI experience!
               </button>
             </div>
 
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <label className="flex items-center gap-2 w-full sm:max-w-md rounded-xl border border-white/10 bg-slate-950/75 px-3.5 py-2.5 focus-within:border-cyan-400/50">
+                <Search className="w-4 h-4 text-cyan-300 shrink-0" />
+                <input
+                  type="search"
+                  value={projectSearch}
+                  onChange={(event) => {
+                    setProjectSearch(event.target.value);
+                    setProjectPage(1);
+                  }}
+                  placeholder="Search projects, concepts, or technology..."
+                  aria-label="Search 3D projects"
+                  className="w-full bg-transparent outline-none text-sm text-white placeholder:text-slate-500"
+                />
+              </label>
+              <span className="text-[11px] font-mono text-purple-300">12 interactive previews per page</span>
+            </div>
+            {projectPager}
+
             {/* 3D Project Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {data.projects.map((project, index) => (
+              {visibleProjects.map((project, index) => (
                 <div
                   key={project.id}
                   className="group rounded-2xl bg-slate-950/80 backdrop-blur-xl border border-white/10 hover:border-cyan-400/50 transition-all duration-300 overflow-hidden flex flex-col justify-between hover:-translate-y-1.5 shadow-[0_10px_40px_rgba(0,0,0,0.6)]"
@@ -1951,7 +2054,7 @@ Would love your feedback on the 3D transitions and UI experience!
                     <div className="relative bg-gradient-to-b from-slate-900/90 to-slate-950 border-b border-white/10 p-3">
                       <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
                         <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-950/80 border border-white/15 text-cyan-300">
-                          0{index + 1} • LIVE 3D MODEL
+                          {String((projectPage - 1) * projectPageSize + index + 1).padStart(3, '0')} • {project.id.startsWith('concept-') ? '3D CONCEPT' : 'LIVE 3D PREVIEW'}
                         </span>
                         <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-slate-950/80 text-slate-300 border border-white/10">
                           {project.metrics}
@@ -2028,6 +2131,12 @@ Would love your feedback on the 3D transitions and UI experience!
                 </div>
               ))}
             </div>
+            {visibleProjects.length === 0 && (
+              <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-10 text-center text-sm text-slate-400">
+                No project cards match “{projectSearch}”. Try another title or technology.
+              </div>
+            )}
+            {projectPager}
           </div>
         </section>
 
