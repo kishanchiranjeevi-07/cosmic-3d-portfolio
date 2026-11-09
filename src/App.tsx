@@ -723,6 +723,7 @@ export function App() {
   const [selectedSkillCategory, setSelectedSkillCategory] = useState<string>('All');
   const [projectSearch, setProjectSearch] = useState('');
   const [projectPage, setProjectPage] = useState(1);
+  const [projectEditorPage, setProjectEditorPage] = useState(1);
   const [highlightedSkill, setHighlightedSkill] = useState<SkillItem | null>(null);
   const [activeProjectModal, setActiveProjectModal] = useState<ProjectItem | null>(null);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState<boolean>(false);
@@ -1303,6 +1304,12 @@ export function App() {
       : data.skills.filter((s) => s.category === selectedSkillCategory);
 
   const projectPageSize = 12;
+  const projectEditorPageSize = 10;
+  const projectEditorPageCount = Math.max(1, Math.ceil(data.projects.length / projectEditorPageSize));
+  const editableProjects = data.projects.slice(
+    (projectEditorPage - 1) * projectEditorPageSize,
+    projectEditorPage * projectEditorPageSize
+  );
   const matchingProjects = data.projects.filter((project) =>
     `${project.title} ${project.tagline} ${project.description} ${project.technologies.join(' ')}`
       .toLowerCase()
@@ -2891,7 +2898,7 @@ Would love your feedback on the 3D transitions and UI experience!
                   <button
                     onClick={() => {
                       const newProj: ProjectItem = {
-                        id: `proj-${Date.now()}`,
+                        id: `proj-${crypto.randomUUID()}`,
                         title: 'New 3D Web Project',
                         tagline: 'Interactive Full-Stack Experience',
                         description:
@@ -2904,14 +2911,42 @@ Would love your feedback on the 3D transitions and UI experience!
                         accentColor: '#38bdf8',
                         metrics: 'Add a project highlight'
                       };
-                      setData({ ...data, projects: [newProj, ...data.projects] });
+                      setData((current) => ({ ...current, projects: [newProj, ...current.projects] }));
+                      setProjectEditorPage(1);
+                      setProjectPage(1);
+                      setProjectSearch('');
                     }}
                     className="w-full py-2.5 rounded-xl font-bold text-xs bg-cyan-400 text-slate-950 hover:bg-cyan-300 transition flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-4 h-4" /> + Add New 3D Project Card
                   </button>
 
-                  {data.projects.map((p, idx) => (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2.5">
+                    <span className="text-[11px] font-mono text-slate-400">
+                      {data.projects.length} cards • Editing {data.projects.length ? (projectEditorPage - 1) * projectEditorPageSize + 1 : 0}–{Math.min(projectEditorPage * projectEditorPageSize, data.projects.length)}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setProjectEditorPage((page) => Math.max(1, page - 1))}
+                        disabled={projectEditorPage <= 1}
+                        className="px-2.5 py-1.5 rounded border border-white/10 text-[11px] text-cyan-200 disabled:opacity-35"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-[11px] font-mono text-slate-300">Page {projectEditorPage} / {projectEditorPageCount}</span>
+                      <button
+                        type="button"
+                        onClick={() => setProjectEditorPage((page) => Math.min(projectEditorPageCount, page + 1))}
+                        disabled={projectEditorPage >= projectEditorPageCount}
+                        className="px-2.5 py-1.5 rounded border border-white/10 text-[11px] text-cyan-200 disabled:opacity-35"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+
+                  {editableProjects.map((p) => (
                     <div
                       key={p.id}
                       className="p-4 rounded-xl bg-slate-900 border border-white/10 space-y-3"
@@ -2920,11 +2955,7 @@ Would love your feedback on the 3D transitions and UI experience!
                         <input
                           type="text"
                           value={p.title}
-                          onChange={(e) => {
-                            const next = [...data.projects];
-                            next[idx] = { ...p, title: e.target.value };
-                            setData({ ...data, projects: next });
-                          }}
+                          onChange={(e) => updateProject(p.id, { title: e.target.value })}
                           className="font-bold text-white bg-slate-950 px-3 py-1.5 rounded border border-white/15 text-sm w-2/3"
                         />
                         <button
@@ -2953,11 +2984,7 @@ Would love your feedback on the 3D transitions and UI experience!
                         rows={2}
                         aria-label="Project description"
                         value={p.description}
-                        onChange={(e) => {
-                          const next = [...data.projects];
-                          next[idx] = { ...p, description: e.target.value };
-                          setData({ ...data, projects: next });
-                        }}
+                        onChange={(e) => updateProject(p.id, { description: e.target.value })}
                         className="w-full px-3 py-1.5 rounded bg-slate-950 border border-white/15 text-xs text-slate-200"
                       />
 
@@ -2991,22 +3018,14 @@ Would love your feedback on the 3D transitions and UI experience!
                           type="text"
                           placeholder="GitHub URL"
                           value={p.githubUrl}
-                          onChange={(e) => {
-                            const next = [...data.projects];
-                            next[idx] = { ...p, githubUrl: e.target.value };
-                            setData({ ...data, projects: next });
-                          }}
+                          onChange={(e) => updateProject(p.id, { githubUrl: e.target.value })}
                           className="px-2.5 py-1.5 rounded bg-slate-950 border border-white/15 text-xs text-slate-300"
                         />
                         <input
                           type="text"
                           placeholder="Live Demo URL"
                           value={p.demoUrl}
-                          onChange={(e) => {
-                            const next = [...data.projects];
-                            next[idx] = { ...p, demoUrl: e.target.value };
-                            setData({ ...data, projects: next });
-                          }}
+                          onChange={(e) => updateProject(p.id, { demoUrl: e.target.value })}
                           className="px-2.5 py-1.5 rounded bg-slate-950 border border-white/15 text-xs text-slate-300"
                         />
                       </div>
